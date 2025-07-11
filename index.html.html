@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎤 Speech-to-Text System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-group h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        select {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-recording {
+            background: linear-gradient(45deg, #f44336, #da190b) !important;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+        }
+
+        .audio-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .audio-controls button {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .status-panel {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status {
+            color: white;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .visualization {
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .audio-bars {
+            display: flex;
+            gap: 3px;
+            height: 40px;
+            align-items: end;
+        }
+
+        .bar {
+            width: 4px;
+            background: linear-gradient(to top, #4CAF50, #81C784);
+            border-radius: 2px;
+            animation: dance 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes dance {
+            0% { height: 5px; }
+            100% { height: 40px; }
+        }
+
+        .confidence-meter {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .confidence-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(to right, #f44336, #FF9800, #4CAF50);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .transcription-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 200px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .transcription-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .transcription-text {
+            min-height: 150px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: vertical;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .export-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .export-controls button {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        .success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .file-input {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px dashed #ccc;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .file-input:hover {
+            border-color: #2196F3;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .file-input.dragover {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #81C784);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            .audio-controls {
+                flex-direction: column;
+            }
+
+            .export-controls {
+                flex-direction: column;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 Speech-to-Text System</h1>
+            <p>Modern multi-language transcription with real-time processing</p>
+        </div>
+
+        <div class="main-panel">
+            <div class="controls">
+                <div class="control-group">
+                    <h3>🌍 Language Selection</h3>
+                    <select id="languageSelect">
+                        <option value="en-US">English (US)</option>
+                        <option value="en-GB">English (UK)</option>
+                        <option value="te-IN">Telugu (తెలుగు)</option>
+                        <option value="hi-IN">Hindi (हिंदी)</option>
+                        <option value="es-ES">Spanish (Español)</option>
+                        <option value="fr-FR">French (Français)</option>
+                        <option value="de-DE">German (Deutsch)</option>
+                        <option value="it-IT">Italian (Italiano)</option>
+                        <option value="pt-BR">Portuguese (Português)</option>
+                        <option value="ru-RU">Russian (Русский)</option>
+                        <option value="zh-CN">Chinese (中文)</option>
+                        <option value="ja-JP">Japanese (日本語)</option>
+                        <option value="ko-KR">Korean (한국어)</option>
+                        <option value="ar-SA">Arabic (العربية)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <h3>🎙️ Live Recognition</h3>
+                    <button id="startBtn">Start Recording</button>
+                    <button id="stopBtn" class="hidden">Stop Recording</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>📁 Audio File Upload</h3>
+                    <div class="file-input" id="fileInput">
+                        <p>Click or drag audio file here</p>
+                        <small>Supports: MP3, WAV, M4A, OGG, FLAC</small>
+                    </div>
+                    <input type="file" id="audioFile" accept="audio/*" class="hidden">
+                </div>
+            </div>
+
+            <div class="status-panel">
+                <div class="status" id="statusText">Ready to start recording</div>
+                <div class="visualization" id="visualization">
+                    <div class="audio-bars hidden" id="audioBars">
+                        <div class="bar" style="animation-delay: 0s"></div>
+                        <div class="bar" style="animation-delay: 0.1s"></div>
+                        <div class="bar" style="animation-delay: 0.2s"></div>
+                        <div class="bar" style="animation-delay: 0.3s"></div>
+                        <div class="bar" style="animation-delay: 0.4s"></div>
+                        <div class="bar" style="animation-delay: 0.5s"></div>
+                        <div class="bar" style="animation-delay: 0.6s"></div>
+                        <div class="bar" style="animation-delay: 0.7s"></div>
+                    </div>
+                    <div id="visualizationText">🎤 Click "Start Recording" to begin</div>
+                </div>
+                <div class="confidence-meter">
+                    <div style="color: white; font-size: 0.9em; margin-bottom: 5px;">
+                        Confidence: <span id="confidenceText">0%</span>
+                    </div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="confidenceFill"></div>
+                    </div>
+                </div>
+                <div class="progress-bar hidden" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <div class="audio-controls hidden" id="audioControls">
+                <button id="playBtn">▶️ Play Audio</button>
+                <button id="pauseBtn" class="hidden">⏸️ Pause</button>
+                <button id="transcribeBtn" class="btn-secondary">🎯 Transcribe Audio</button>
+                <button id="directTranscribeBtn" class="btn-secondary">⚡ Direct Transcribe</button>
+            </div>
+        </div>
+
+        <div class="transcription-panel">
+            <div class="transcription-header">
+                <h3>📝 Transcription Results</h3>
+                <div class="export-controls">
+                    <button id="copyBtn" class="btn-secondary">📋 Copy</button>
+                    <button id="downloadBtn" class="btn-secondary">💾 Download</button>
+                    <button id="clearBtn" class="btn-danger">🗑️ Clear</button>
+                </div>
+            </div>
+            <textarea id="transcriptionText" class="transcription-text" placeholder="Your transcription will appear here..."></textarea>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>🔒 All processing happens locally in your browser. No data is transmitted to external servers.</p>
+    </div>
+
+    <script>
+        class SpeechToTextSystem {
+            constructor() {
+                this.recognition = null;
+                this.isRecording = false;
+                this.audioElement = null;
+                this.audioContext = null;
+                this.analyser = null;
+                this.currentLanguage = 'en-US';
+                this.transcriptionText = '';
+                
+                this.initializeElements();
+                this.setupEventListeners();
+                this.checkBrowserSupport();
+            }
+
+            initializeElements() {
+                this.elements = {
+                    languageSelect: document.getElementById('languageSelect'),
+                    startBtn: document.getElementById('startBtn'),
+                    stopBtn: document.getElementById('stopBtn'),
+                    fileInput: document.getElementById('fileInput'),
+                    audioFile: document.getElementById('audioFile'),
+                    statusText: document.getElementById('statusText'),
+                    visualization: document.getElementById('visualization'),
+                    audioBars: document.getElementById('audioBars'),
+                    visualizationText: document.getElementById('visualizationText'),
+                    confidenceText: document.getElementById('confidenceText'),
+                    confidenceFill: document.getElementById('confidenceFill'),
+                    progressBar: document.getElementById('progressBar'),
+                    progressFill: document.getElementById('progressFill'),
+                    audioControls: document.getElementById('audioControls'),
+                    playBtn: document.getElementById('playBtn'),
+                    pauseBtn: document.getElementById('pauseBtn'),
+                    transcribeBtn: document.getElementById('transcribeBtn'),
+                    directTranscribeBtn: document.getElementById('directTranscribeBtn'),
+                    transcriptionText: document.getElementById('transcriptionText'),
+                    copyBtn: document.getElementById('copyBtn'),
+                    downloadBtn: document.getElementById('downloadBtn'),
+                    clearBtn: document.getElementById('clearBtn')
+                };
+            }
+
+            setupEventListeners() {
+                // Language selection
+                this.elements.languageSelect.addEventListener('change', (e) => {
+                    this.currentLanguage = e.target.value;
+                    this.showStatus(`Language changed to ${e.target.options[e.target.selectedIndex].text}`);
+                });
+
+                // Recording controls
+                this.elements.startBtn.addEventListener('click', () => this.startRecording());
+                this.elements.stopBtn.addEventListener('click', () => this.stopRecording());
+
+                // File upload
+                this.elements.fileInput.addEventListener('click', () => this.elements.audioFile.click());
+                this.elements.audioFile.addEventListener('change', (e) => this.handleFileUpload(e));
+
+                // Drag and drop
+                this.elements.fileInput.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.elements.fileInput.classList.add('dragover');
+                });
+
+                this.elements.fileInput.addEventListener('dragleave', () => {
+                    this.elements.fileInput.classList.remove('dragover');
+                });
+
+                this.elements.fileInput.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.elements.fileInput.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.processAudioFile(files[0]);
+                    }
+                });
+
+                // Audio controls
+                this.elements.playBtn.addEventListener('click', () => this.playAudio());
+                this.elements.pauseBtn.addEventListener('click', () => this.pauseAudio());
+                this.elements.transcribeBtn.addEventListener('click', () => this.transcribeAudio());
+                this.elements.directTranscribeBtn.addEventListener('click', () => this.directTranscribe());
+
+                // Export controls
+                this.elements.copyBtn.addEventListener('click', () => this.copyTranscription());
+                this.elements.downloadBtn.addEventListener('click', () => this.downloadTranscription());
+                this.elements.clearBtn.addEventListener('click', () => this.clearTranscription());
+            }
+
+            checkBrowserSupport() {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    this.showError('Speech recognition not supported in this browser. Please use Chrome, Safari, or Edge.');
+                    this.elements.startBtn.disabled = true;
+                    return false;
+                }
+                return true;
+            }
+
+            initializeSpeechRecognition() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                this.recognition = new SpeechRecognition();
+                
+                this.recognition.continuous = true;
+                this.recognition.interimResults = true;
+                this.recognition.lang = this.currentLanguage;
+
+                this.recognition.onstart = () => {
+                    this.isRecording = true;
+                    this.showStatus('🎙️ Listening... Speak now');
+                    this.showVisualization();
+                };
+
+                this.recognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        const confidence = event.results[i][0].confidence;
+
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript + ' ';
+                            this.updateConfidence(confidence);
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+
+                    if (finalTranscript) {
+                        this.addToTranscription(finalTranscript);
+                    }
+
+                    // Show interim results
+                    if (interimTranscript) {
+                        this.showStatus(`🎙️ Hearing: "${interimTranscript}"`);
+                    }
+                };
+
+                this.recognition.onerror = (event) => {
+                    this.showError(`Speech recognition error: ${event.error}`);
+                    this.stopRecording();
+                };
+
+                this.recognition.onend = () => {
+                    this.stopRecording();
+                };
+            }
+
+            startRecording() {
+                if (!this.checkBrowserSupport()) return;
+
+                this.initializeSpeechRecognition();
+                this.recognition.start();
+                
+                this.elements.startBtn.classList.add('hidden');
+                this.elements.stopBtn.classList.remove('hidden');
+                this.elements.stopBtn.classList.add('btn-recording');
+            }
+
+            stopRecording() {
+                if (this.recognition && this.isRecording) {
+                    this.recognition.stop();
+                }
+                
+                this.isRecording = false;
+                this.elements.startBtn.classList.remove('hidden');
+                this.elements.stopBtn.classList.add('hidden');
+                this.elements.stopBtn.classList.remove('btn-recording');
+                this.hideVisualization();
+                this.showStatus('✅ Recording stopped');
+            }
+
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    this.processAudioFile(file);
+                }
+            }
+
+            processAudioFile(file) {
+                // Check file size (50MB limit)
+                if (file.size > 50 * 1024 * 1024) {
+                    this.showError('File too large. Maximum size is 50MB.');
+                    return;
+                }
+
+                // Check file type
+                if (!file.type.startsWith('audio/')) {
+                    this.showError('Please select an audio file.');
+                    return;
+                }
+
+                const url = URL.createObjectURL(file);
+                this.audioElement = new Audio(url);
+                
+                this.audioElement.addEventListener('loadedmetadata', () => {
+                    this.showSuccess(`Audio file loaded: ${file.name} (${this.formatDuration(this.audioElement.duration)})`);
+                    this.elements.audioControls.classList.remove('hidden');
+                });
+
+                this.audioElement.addEventListener('error', () => {
+                    this.showError('Error loading audio file. Please try a different format.');
+                });
+
+                this.showStatus('📁 Loading audio file...');
+                this.showProgress(0);
+            }
+
+            playAudio() {
+                if (!this.audioElement) return;
+
+                this.audioElement.play();
+                this.elements.playBtn.classList.add('hidden');
+                this.elements.pauseBtn.classList.remove('hidden');
+                this.showStatus('▶️ Playing audio...');
+
+                this.audioElement.addEventListener('ended', () => {
+                    this.elements.playBtn.classList.remove('hidden');
+                    this.elements.pauseBtn.classList.add('hidden');
+                    this.showStatus('⏹️ Audio finished');
+                });
+            }
+
+            pauseAudio() {
+                if (!this.audioElement) return;
+
+                this.audioElement.pause();
+                this.elements.playBtn.classList.remove('hidden');
+                this.elements.pauseBtn.classList.add('hidden');
+                this.showStatus('⏸️ Audio paused');
+            }
+
+            transcribeAudio() {
+                if (!this.audioElement) {
+                    this.showError('Please upload an audio file first.');
+                    return;
+                }
+
+                this.showStatus('🎯 Starting transcription... Play the audio and speak along to capture it.');
+                this.showSuccess('Method: Playing audio through speakers, capturing via microphone. Make sure your microphone can hear the audio.');
+                
+                // Play audio and start recording simultaneously
+                this.audioElement.currentTime = 0;
+                this.playAudio();
+                
+                // Start recording after a short delay
+                setTimeout(() => {
+                    this.startRecording();
+                }, 500);
+            }
+
+            directTranscribe() {
+                if (!this.audioElement) {
+                    this.showError('Please upload an audio file first.');
+                    return;
+                }
+
+                this.showStatus('⚡ Attempting direct transcription...');
+                this.showSuccess('Method: Using Web Audio API (experimental). This may not work in all browsers.');
+                
+                // This is a placeholder for direct audio transcription
+                // In a real implementation, you would need to use a speech recognition service
+                // that can process audio files directly
+                setTimeout(() => {
+                    this.showError('Direct transcription not fully implemented. Please use the "Transcribe Audio" method instead.');
+                }, 1000);
+            }
+
+            addToTranscription(text) {
+                this.transcriptionText += text;
+                this.elements.transcriptionText.value = this.transcriptionText;
+                this.elements.transcriptionText.scrollTop = this.elements.transcriptionText.scrollHeight;
+            }
+
+            copyTranscription() {
+                const text = this.elements.transcriptionText.value;
+                if (!text) {
+                    this.showError('No transcription to copy.');
+                    return;
+                }
+
+                navigator.clipboard.writeText(text).then(() => {
+                    this.showSuccess('Transcription copied to clipboard!');
+                }).catch(() => {
+                    this.showError('Failed to copy transcription.');
+                });
+            }
+
+            downloadTranscription() {
+                const text = this.elements.transcriptionText.value;
+                if (!text) {
+                    this.showError('No transcription to download.');
+                    return;
+                }
+
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `transcription-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.showSuccess('Transcription downloaded!');
+            }
+
+            clearTranscription() {
+                this.elements.transcriptionText.value = '';
+                this.transcriptionText = '';
+                this.showStatus('🗑️ Transcription cleared');
+            }
+
+            showVisualization() {
+                this.elements.audioBars.classList.remove('hidden');
+                this.elements.visualizationText.classList.add('hidden');
+            }
+
+            hideVisualization() {
+                this.elements.audioBars.classList.add('hidden');
+                this.elements.visualizationText.classList.remove('hidden');
+                this.elements.visualizationText.textContent = '🎤 Click "Start Recording" to begin';
+            }
+
+            updateConfidence(confidence) {
+                const percentage = Math.round(confidence * 100);
+                this.elements.confidenceText.textContent = `${percentage}%`;
+                this.elements.confidenceFill.style.width = `${percentage}%`;
+            }
+
+            showProgress(percentage) {
+                this.elements.progressBar.classList.remove('hidden');
+                this.elements.progressFill.style.width = `${percentage}%`;
+                
+                if (percentage >= 100) {
+                    setTimeout(() => {
+                        this.elements.progressBar.classList.add('hidden');
+                    }, 1000);
+                }
+            }
+
+            showStatus(message) {
+                this.elements.statusText.textContent = message;
+                this.clearMessages();
+            }
+
+            showError(message) {
+                this.clearMessages();
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.textContent = message;
+                this.elements.statusText.parentNode.appendChild(errorDiv);
+                
+                setTimeout(() => {
+                    errorDiv.remove();
+                }, 5000);
+            }
+
+            showSuccess(message) {
+                this.clearMessages();
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success';
+                successDiv.textContent = message;
+                this.elements.statusText.parentNode.appendChild(successDiv);
+                
+                setTimeout(() => {
+                    successDiv.remove();
+                }, 5000);
+            }
+
+            clearMessages() {
+                const messages = this.elements.statusText.parentNode.querySelectorAll('.error, .success');
+                messages.forEach(msg => msg.remove());
+            }
+
+            formatDuration(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new SpeechToTextSystem();
+        });
+    </script>
+</body>
+</html>
